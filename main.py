@@ -11,14 +11,12 @@ def setup_dialogue_ui(manager):
         manager=manager, visible=False
     )
     
-    # Аватар NPC (UIImage)
     npc_avatar_ui = pygame_gui.elements.ui_image.UIImage(
         relative_rect=pygame.Rect((580, 20), (100, 100)),
         image_surface=pygame.Surface((100,100)), # Тимчасова поверхня
         manager=manager, container=panel
     )
 
-    # Ім'я NPC
     name_label = pygame_gui.elements.UILabel(
         relative_rect=pygame.Rect((580, 125), (100, 30)),
         text="Ім'я", manager=manager, container=panel
@@ -58,8 +56,8 @@ def main():
     ]
     
     npcs = [
-        NPC(500, 300, "res/npc1.png", "res/npc1.png", "Анна", "Ельфійка, знаєш чари, тендітна та дуже добра. Ти стоїш біля будинку та займаєшся звичними справами. Знаєш що в селі нещодавно щось сталось та всі в селі метушаться. Лісоруб Драко знає більше за тебе"),
-        NPC(120, 550, "res/npc2.png", "res/npc2.png", "Драко", "Дворф, все життя працюєш лісорубом, брутальний та недуже розумний. Знаєш що в селі щось сталось і ти бачив сліди бійки в лісі")
+        NPC(500, 300, "res/npc1.png", "res/npc1.png", "Анна", "Ельфійка, знаєш чари, дуже добра. В цьому селі ти знахарка та допомагаєш мандрівникам. Ти деколи відповідаєш загадками", 1.5, 0.9),
+        NPC(120, 550, "res/npc2.png", "res/npc2.png", "Драко", "Дворф, все життя працюєш лісорубом, брутальний та досвітчений. Часто плутаєш слова та постійно виправляєш сам себе", 0.2, 0.1)
     ]
 
     # UI елементи

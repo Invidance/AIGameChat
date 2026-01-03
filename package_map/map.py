@@ -1,7 +1,7 @@
 
 import pygame
 import requests
-from consts import WIDTH, HEIGHT, MAP_HEIGHT, MAP_WIDTH
+from consts import WIDTH, HEIGHT, MAP_HEIGHT, MAP_WIDTH, STORY_BACKGROUND
 
 class Player:
     def __init__(self, x, y, img_path):
@@ -45,7 +45,7 @@ class Entity:
             screen.blit(self.image, camera.apply(self.rect))
 
 class NPC(Entity):
-    def __init__(self, x, y, img_path, avatar_path, name, personality):
+    def __init__(self, x, y, img_path, avatar_path, name, personality, temp, top_p):
         super().__init__(x, y, img_path, size=(50, 50))
         self.name = name
         self.personality = personality
@@ -54,6 +54,10 @@ class NPC(Entity):
         self.avatar = pygame.transform.scale(self.avatar, (100, 100))
         self.last_reply = "Привіт! Я слухаю тебе."
         self.is_thinking = False
+        self.temperature = temp
+        self.top_p = top_p
+        self.system_promt = {"role": "system", "content": f"Ти персонаж гри в DnD. Це історія цього світу: {STORY_BACKGROUND}. Твоє ім'я {self.name}. Твій характер: {self.personality}. Відповідай коротко (1-2 речення)."}
+        self.memmory = [self.system_promt]
 
     def draw(self, screen, camera):
         super().draw(screen, camera)
@@ -63,20 +67,23 @@ class NPC(Entity):
         pos = camera.apply(self.rect)
         screen.blit(text_surf, (pos.x + (self.rect.width//2 - text_surf.get_width()//2), pos.y - 25))
 
+    def setup_ai_parameters(self, temperature):
+        self.temperature = temperature
+
     def fetch_ai_response(self, user_text, ui_label):
         self.is_thinking = True
         ui_label.set_text(f"<i>{self.name} думає...</i>")
         
         url = "http://localhost:1234/v1/chat/completions"
         
+        self.memmory.append({"role": "user", "content": user_text})
         payload = {
-            "model": "llama-3.2-8x3b-moe-dark-champion-instruct-uncensored-abliterated-18.4b",
-            "messages": [
-                {"role": "system", "content": f"Ти персонаж гри в DnD. Твоє ім'я {self.name}. Твій характер: {self.personality}. Відповідай коротко (1-2 речення)."},
-                {"role": "user", "content": user_text}
-            ],
-            "temperature": 0.7,
-            "max_tokens": 100,
+            "model": "google/gemma-3n-e4b",
+            "messages": self.memmory,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "max_tokens": 200,
+            "stream": False
         }
 
         try:
@@ -84,6 +91,13 @@ class NPC(Entity):
             
             if response.status_code == 200:
                 result = response.json()['choices'][0]['message']['content']
+                self.memmory.append({"role": "assistant", "content": result})
+                if self.memmory.__len__() > 10:
+                    cache = self.memmory[-8:]
+                    self.memmory.clear()
+                    self.memmory.append(self.system_promt)
+                    for v in cache:
+                        self.memmory.append(v)
             else:
                 result = f"Помилка сервера: {response.status_code}"
                 
